@@ -1,8 +1,24 @@
+import { IsString, IsInt, Min, Max, IsNumber, IsNotEmpty } from 'class-validator';
+
 export class Movie {
+    @IsString()
+    @IsNotEmpty()
     title: string;
+
+    @IsString()
     genre: string;
+    
+    @IsInt()
+    @Min(0)
     duration: number;
+
+    @IsNumber()
+    @Min(0)
+    @Max(10)
     rating: number;
+
+    @IsInt()
+    // @Min(0)
     release_year: number;
 
     constructor(

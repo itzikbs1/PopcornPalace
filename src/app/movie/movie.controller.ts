@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ValidationPipe } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
 import { Movie } from './movie';
+import { UpdateMovie } from './update-movie';
 
 @Controller('movies')
 export class MovieController {
@@ -18,7 +19,7 @@ export class MovieController {
     }
 
     @Post()
-    addMovie(@Body() movie: Movie): Movie {
+    create(@Body(ValidationPipe) movie: Movie): Movie {
         return this.movieService.addMovie(movie);
     }
 
@@ -29,8 +30,8 @@ export class MovieController {
     }
 
     @Post('/update/:title')
-    updateMovie(@Param('title') title: string, @Body() updatedMovie: Partial<Movie>): Movie | null {
-        return this.movieService.updateMovie(title, updatedMovie);
+    update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: UpdateMovie): Movie | null {
+        return this.movieService.updateMovie(title, movieUpdate);
     }
 
     @Delete(':title')

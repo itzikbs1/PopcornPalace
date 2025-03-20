@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 import { Movie } from './movie';
+import { UpdateMovie } from './update-movie';
 
 @Injectable()
 export class MovieService {
@@ -16,6 +18,7 @@ export class MovieService {
     }
 
     getAllMovies(): Movie[] {
+        if (this.movies.length === 0) throw new NotFoundException('Their are no movies available');
         return this.movies;
     }
 
@@ -23,12 +26,13 @@ export class MovieService {
         return this.movies.find(movie => movie.title === title);
     }
 
-    updateMovie(title: string, updatedMovie: Partial<Movie>): Movie | null {
+    updateMovie(title: string, updatedMovie: UpdateMovie): Movie | null {
         const index = this.movies.findIndex(movie => movie.title === title);
         if (index !== -1) {
             this.movies[index] = { ...this.movies[index], ...updatedMovie };
             return this.movies[index];
         }
+        throw new NotFoundException(`Movie ${title} Not Found`)
         return null;
     }
 
@@ -38,6 +42,7 @@ export class MovieService {
             const deletedMovie = this.movies.splice(index, 1);
             return deletedMovie;
         }
+        throw new NotFoundException(`Movie ${title} Not Found For Deleting`)
         return null;
     }
 }
