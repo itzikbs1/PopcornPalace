@@ -1,36 +1,44 @@
 import { IsString, IsDate, IsNumber, IsNotEmpty } from "class-validator";
+import { Transform, Type } from 'class-transformer';
 
 export class ShowTime {
     //temporary
-    id: number;
-    @IsString()
     @IsNotEmpty()
-    movie: string;
+    movieId: number;
+    // @IsString()
+    // @IsNotEmpty()
+    // movie: string;
 
     @IsString()
     @IsNotEmpty()
     theater: string;
 
     @IsDate()
-    start_time: Date;
+    @Type(() => Date)
+    @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    startTime: Date;
 
     @IsDate()
-    end_time: Date;
+    @Type(() => Date)
+    @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    endTime: Date;
 
     @IsNumber()
     price: number;
 
     constructor(
-        movie: string,
+        // movie: string,
+        movieId: number,
         theater: string,
-        start_time: Date,
-        end_time: Date,
+        startTime: Date,
+        endTime: Date,
         price: number
     ) {
-        this.movie = movie;
+        // this.movie = movie;
+        this.movieId = movieId;
         this.theater = theater;
-        this.start_time = start_time;
-        this.end_time = end_time;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.price = price;
     }
 }
