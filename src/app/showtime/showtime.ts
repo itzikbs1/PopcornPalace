@@ -1,6 +1,8 @@
 import { IsString, IsDate, IsNumber, IsNotEmpty } from "class-validator";
 import { Transform, Type } from 'class-transformer';
 
+// import { Booking } from "../ticketBooking/booking";
+
 export class ShowTime {
     //temporary
     @IsNotEmpty()
@@ -26,13 +28,16 @@ export class ShowTime {
     @IsNumber()
     price: number;
 
+    bookings: String[]; // One-to-Many relation, holds bookings related to this showtime
+
     constructor(
         // movie: string,
         movieId: number,
         theater: string,
         startTime: Date,
         endTime: Date,
-        price: number
+        price: number,
+        bookings: String[] = []
     ) {
         // this.movie = movie;
         this.movieId = movieId;
@@ -40,5 +45,6 @@ export class ShowTime {
         this.startTime = startTime;
         this.endTime = endTime;
         this.price = price;
+        this.bookings = bookings;
     }
 }
