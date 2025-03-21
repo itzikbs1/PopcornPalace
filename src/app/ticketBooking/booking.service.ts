@@ -26,13 +26,13 @@ export class BookingService {
             throw new BadRequestException('Seat already booked');
         }
 
-        const newBooking: Booking = {
-            bookingId: Date.now().toString(),
+        const newBooking = new Booking(
+            Date.now().toString(),
             showtimeId,
             seatNumber,
             userId,
-            status: 'CONFIRMED'
-        }
+            'CONFIRMED'
+        );
         this.bookings.push(newBooking);
 
         showtime.bookings.push(newBooking.bookingId);

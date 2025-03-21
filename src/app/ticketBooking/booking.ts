@@ -1,12 +1,28 @@
 
 
 export class Booking {
-    bookingId: string; // Unique booking ID
-    showtimeId: number; // Foreign key to Showtimes table
-    seatNumber: number; // Seat number
-    userId: string; // User ID (UUID)
-    status: 'CONFIRMED' | 'CANCELED'; // Booking status
-}
+    bookingId: string;
+    showtimeId: number; 
+    seatNumber: number;
+    userId: string;
+    status: 'CONFIRMED' | 'CANCELED';
+    createdAt: Date;
+    constructor(
+        bookingId: string,
+        showtimeId: number,
+        seatNumber: number,
+        userId: string,
+        status: 'CONFIRMED' | 'CANCELED', // Default to 'pending'
+        createdAt?: Date
+      ) {
+        this.bookingId = bookingId;
+        this.showtimeId = showtimeId;
+        this.seatNumber = seatNumber;
+        this.userId = userId;
+        this.status = status;
+        this.createdAt = createdAt || new Date();
+      }
+    }
 // import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Genereted } from 'typeorm';
 // import { ShowTime } from '../showtime/showtime'; //maybe change to showtime.entity
 
