@@ -2,41 +2,72 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 
 import { ShowTime } from "./showtime";
 import { UpdateShowTime } from './update-showtime';
+import { MovieService } from "../movie/movie.service"; 
 
 @Injectable()
 export class ShowTimeService {
-    private showtimes: ShowTime[];
+    private showtimes: ShowTime[] = [
+        { id: 1, movieId: 1, theater: "Cinema City", startTime: new Date("2025-03-21T16:05:00Z"), endTime: new Date("2025-04-10T20:30:00Z"), price: 50.0, bookings: [] },
+        { id: 2, movieId: 2, theater: "IMAX", startTime: new Date("2025-03-20T18:00:00Z"), endTime: new Date("2025-04-11T22:45:00Z"), price: 70.0, bookings: [] },
+        { id: 3, movieId: 3, theater: "Downtown Theater", startTime: new Date("2025-04-12T17:30:00Z"), endTime: new Date("2025-04-12T19:45:00Z"), price: 45.0, bookings: [] }
+    ];
+    
+    private idCounter = 4; // Start ID from 4 since 1-3 are predefined
 
-    constructor() {
-        this.showtimes = [];
+    // constructor() {
+    //     this.showtimes = [];
+    // }
+    constructor(private readonly movieService: MovieService) {}
+
+    getShowTimeById(id: number): ShowTime {
+        const showtime = this.showtimes.find(showtime => showtime.id === id);
+        if (!showtime) {
+            throw new NotFoundException(`Showtime with ID ${id} not found`);
+        }
+        return showtime;
     }
 
-    addShowTime(showtime: ShowTime): ShowTime {
-        
-        if (showtime.startTime >= showtime.endTime) {
+    addShowTime(showtimeData: Omit<ShowTime, 'id'>): ShowTime { //Omit<ShowTime, id> Create a new type that removes `id`
+        if (!showtimeData.movieId || !showtimeData.price || !showtimeData.theater || !showtimeData.startTime || !showtimeData.endTime) {
+            throw new BadRequestException('Missing required showtime fields');
+        }
+
+        // Check if movie exists
+        try {
+            // You need to add a method to MovieService to get movie by ID
+            const movie = this.movieService.getMovieById(showtimeData.movieId);
+            if (!movie) {
+                throw new NotFoundException(`Movie with ID ${showtimeData.movieId} not found`);
+            }
+        } catch (error) {
+            throw new NotFoundException(`Movie with ID ${showtimeData.movieId} not found`);
+        }
+
+        const newStartTime = new Date(showtimeData.startTime);
+        const newEndTime = new Date(showtimeData.endTime);
+
+        if (newStartTime >= newEndTime) {
             throw new BadRequestException('Start time must be before end time.')
         }
 
-        const newStartTime = showtime.startTime;
-        const newEndTime = showtime.endTime;
-
         for (const existingShow of this.showtimes) {
 
-            if (existingShow.theater === showtime.theater) {
-                const existingStartTime = existingShow.startTime;
-                const existingEndTime = existingShow.endTime;
+            if (existingShow.theater === showtimeData.theater) {
+                const existingStartTime = new Date(existingShow.startTime);
+                const existingEndTime = new Date(existingShow.endTime);
 
                 if (
-                    (newStartTime <= existingStartTime && existingStartTime <= newEndTime) ||
-                    (newStartTime <= existingEndTime && existingEndTime <= newEndTime) ||
+                    (newStartTime <= existingStartTime && existingStartTime < newEndTime) ||
+                    (newStartTime < existingEndTime && existingEndTime <= newEndTime) ||
                     (existingStartTime <= newStartTime && newEndTime <= existingEndTime)
                 ) {
                     throw new ConflictException(`Showtime overlaps with existing showtime in theater ${existingShow.theater}`);
                 }
             }
         }
-        this.showtimes.push(showtime);
-        return showtime;
+        const newShowtime: ShowTime = { id: this.idCounter++, ...showtimeData, bookings: [] };
+        this.showtimes.push(newShowtime);
+        return newShowtime;
     }
 
     // getAllShowTimes(): ShowTime[] {
@@ -46,26 +77,64 @@ export class ShowTimeService {
     //     return this.showtimes;
     // }
 
-    getShowTimeById(id: number): ShowTime | undefined {
-        return this.showtimes.find(showtime => showtime.movieId === id);
-    }
 
-    updateShowTime(id: number, updatedShowTime: UpdateShowTime): ShowTime | null {
-        const index = this.showtimes.findIndex(showtime => showtime.movieId === id);
-        if (index !== -1) {
-            this.showtimes[index] = { ...this.showtimes[index], ...updatedShowTime}
-            return this.showtimes[index];
+
+
+    updateShowTime(id: number, updatedData: Partial<Omit<ShowTime, 'id'>>): ShowTime {
+        const showtimeIndex = this.showtimes.findIndex(showtime => showtime.id === id);
+        if (showtimeIndex === -1) {
+            throw new NotFoundException(`Showtime with ID ${id} not found`);
         }
-        throw new NotFoundException('This ShowTime Dosent Found');
+
+        // Check if movie exists
+        try {
+            // You need to add a method to MovieService to get movie by ID
+            const movie = this.movieService.getMovieById(updatedData.movieId);
+            if (!movie) {
+                throw new NotFoundException(`Movie with ID ${updatedData.movieId} not found`);
+            }
+        } catch (error) {
+            throw new NotFoundException(`Movie with ID ${updatedData.movieId} not found`);
+        }
+
+        const existingShowtime = this.showtimes[showtimeIndex];
+
+        // Check if the user is modifying the theater, startTime, or endTime
+        const newTheater = updatedData.theater ?? existingShowtime.theater;
+        const newStartTime = updatedData.startTime ?? existingShowtime.startTime;
+        const newEndTime = updatedData.endTime ?? existingShowtime.endTime;
+
+        if (newStartTime >= newEndTime) {
+            throw new BadRequestException('Start time must be before end time.');
+        }
+
+        // Check for overlapping showtimes in the same theater
+        for (const otherShow of this.showtimes) {
+            if (otherShow.id !== id && otherShow.theater === newTheater) {
+                const existingStartTime = otherShow.startTime;
+                const existingEndTime = otherShow.endTime;
+
+                if (
+                    (newStartTime <= existingStartTime && existingStartTime < newEndTime) ||
+                    (newStartTime < existingEndTime && existingEndTime <= newEndTime) ||
+                    (existingStartTime <= newStartTime && newEndTime <= existingEndTime)
+                ) {
+                    throw new ConflictException(`Updated showtime overlaps with an existing showtime in theater ${newTheater}`);
+                }
+            }
+        }
+
+        // Update the showtime
+        this.showtimes[showtimeIndex] = { ...existingShowtime, ...updatedData };
+        return this.showtimes[showtimeIndex];
     }
     
-    deleteShowTime(id: number): ShowTime[] | null {
-        const index = this.showtimes.findIndex(showtime => showtime.movieId === id);
-        if (index !== -1) {
-            const deletedShowTime = this.showtimes.splice(index, 1);
-            return deletedShowTime
+    deleteShowTime(id: number) {
+        const index = this.showtimes.findIndex(showtime => showtime.id === id);
+        if (index === -1) {
+            throw new NotFoundException('This ShowTime Not Found For Deleting');
         }
-        throw new NotFoundException('This ShowTime Not Found For Deleting');
+        this.showtimes.splice(index, 1);        
     }
 
 }

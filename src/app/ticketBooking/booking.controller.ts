@@ -13,7 +13,7 @@ export class BookingController {
     ) {}
 
     @Post()
-    createBooking(@Body() dto: CreateBookingDto): String {
+    createBooking(@Body() dto: CreateBookingDto): {"bookingId": string} {
         return this.bookingService.createBooking(dto);
     }
 

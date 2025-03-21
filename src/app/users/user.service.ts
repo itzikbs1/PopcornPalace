@@ -2,15 +2,32 @@ import { Injectable, BadRequestException, NotFoundException  } from "@nestjs/com
 import { v4 as uuidv4 } from "uuid";
 
 import { User } from "./user";
+import { isValidEmail } from "src/utils/validation";
 
 @Injectable()
 export class UserService {
-    private users: User[] = [];
+    private users: User[] = [
+        new User(uuidv4(), "John Doe", "john.doe@example.com", "password123"),
+        new User(uuidv4(), "Jane Smith", "jane.smith@example.com", "securePass456"),
+        new User(uuidv4(), "Alice Johnson", "alice.j@example.com", "AlicePass789"),
+    ];
 
     createUser(name: string, email: string, password: string): User {
+        if (!name || name.trim().length === 0) {
+            throw new BadRequestException('Name is required');
+        }
+        if (!email || email.trim().length === 0) {
+            throw new BadRequestException('Email is required');
+        }
+        if (!isValidEmail(email)) {
+            throw new BadRequestException("Invalid email format");
+        }
         if (this.users.find(user => user.email === email)) {
             throw new BadRequestException('Email already exists');
         }
+        if (password.length < 6) {
+            throw new BadRequestException("Password must be at least 6 characters long");
+        } 
 
         const newUser = new User(uuidv4(), name, email, password);
         this.users.push(newUser);
@@ -38,7 +55,10 @@ export class UserService {
         }
         if (name) user.name = name;
         if (email) {
-            if (!User.isValidEmail(email)) {
+            if (!isValidEmail(email)) {
+                throw new BadRequestException('Invalid email format');
+            }
+            if (this.users.find(user => user.email === email)) {
                 throw new BadRequestException('Email already in use');
             }
             user.email = email;

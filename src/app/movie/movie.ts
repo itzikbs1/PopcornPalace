@@ -1,6 +1,10 @@
 import { IsString, IsInt, Min, Max, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class Movie {
+    @IsInt()
+    @IsNotEmpty()
+    id: number;
+
     @IsString()
     @IsNotEmpty()
     title: string;
@@ -22,12 +26,14 @@ export class Movie {
     release_year: number;
 
     constructor(
+        // id: number,
         title: string, 
         genre: string, 
         duration: number, 
         rating: number, 
         release_year: number
     ) {
+        // this.id = id;
         this.title = title;
         this.genre = genre;
         this.duration = duration;

@@ -1,10 +1,15 @@
-import { IsString, IsDate, IsNumber, IsNotEmpty } from "class-validator";
+import { IsInt, IsString, IsDate, IsNumber, IsNotEmpty } from "class-validator";
 import { Transform, Type } from 'class-transformer';
 
 // import { Booking } from "../ticketBooking/booking";
 
 export class ShowTime {
+    
+    @IsInt()
+    @IsNotEmpty()
+    id: number;
     //temporary
+    @IsInt()
     @IsNotEmpty()
     movieId: number;
     // @IsString()
@@ -18,17 +23,20 @@ export class ShowTime {
     @IsDate()
     @Type(() => Date)
     @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    @IsNotEmpty()
     startTime: Date;
 
     @IsDate()
     @Type(() => Date)
     @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    @IsNotEmpty()
     endTime: Date;
 
     @IsNumber()
+    @IsNotEmpty()
     price: number;
 
-    bookings: String[]; // One-to-Many relation, holds bookings related to this showtime
+    bookings: string[] = []; // One-to-Many relation, holds bookings related to this showtime
 
     constructor(
         // movie: string,
@@ -37,7 +45,7 @@ export class ShowTime {
         startTime: Date,
         endTime: Date,
         price: number,
-        bookings: String[] = []
+        bookings?: string[]
     ) {
         // this.movie = movie;
         this.movieId = movieId;
@@ -45,6 +53,6 @@ export class ShowTime {
         this.startTime = startTime;
         this.endTime = endTime;
         this.price = price;
-        this.bookings = bookings;
+        this.bookings = bookings ?? [];
     }
 }

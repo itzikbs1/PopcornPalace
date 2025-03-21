@@ -1,20 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { Movie } from './movie';
 import { UpdateMovie } from './update-movie';
 
 @Injectable()
 export class MovieService {
-    private movies: Movie[];
+    private movies: Movie[] = [
+        { id: 1, title: "Inception", genre: "Sci-Fi", duration: 148, rating: 8.8, release_year: 2010 },
+        { id: 2, title: "The Dark Knight", genre: "Action", duration: 152, rating: 9.0, release_year: 2008 },
+        { id: 3, title: "Interstellar", genre: "Sci-Fi", duration: 169, rating: 8.6, release_year: 2014 },
+    ];
 
-    constructor() {
-        this.movies = [];
-    }
+    private idCounter = 4;
+    // constructor() {
+    //     this.movies = [];
+    // }
 
-    addMovie(movie: Movie): Movie {
-        this.movies.push(movie);
-        return movie;
+    addMovie(movie: Omit<Movie, 'id'>): Movie {
+        const existingMovie = this.movies.find(m => m.title === movie.title && m.release_year === movie.release_year);
+        if (existingMovie) {
+            throw new BadRequestException(`Movie "${movie.title}" from ${movie.release_year} already exists.`);
+        }
+        const newMovie: Movie = { id: this.idCounter++, ...movie };
+        this.movies.push(newMovie);
+        return newMovie;
     }
 
     getAllMovies(): Movie[] {
@@ -24,6 +33,10 @@ export class MovieService {
 
     getMovieByTitle(title: string): Movie | undefined {
         return this.movies.find(movie => movie.title === title);
+    }
+    
+    getMovieById(id: number): Movie | undefined {
+        return this.movies.find(movie => movie.id === id);
     }
 
     updateMovie(title: string, updatedMovie: UpdateMovie): Movie | null {
@@ -36,15 +49,11 @@ export class MovieService {
         return null;
     }
 
-    deleteMovie(title: string): Movie[] | null {
+    deleteMovie(title: string)  {
         const index = this.movies.findIndex(movie => movie.title === title);
-        if (index !== -1) {
-            const deletedMovie = this.movies.splice(index, 1);
-            return deletedMovie;
+        if (index === -1) {
+            throw new NotFoundException(`Movie ${title} Not Found For Deleting`)
         }
-        throw new NotFoundException(`Movie ${title} Not Found For Deleting`)
-        return null;
+        this.movies.splice(index, 1);
     }
 }
-
-// export default MovieService;

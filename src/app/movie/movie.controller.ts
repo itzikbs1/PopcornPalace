@@ -19,7 +19,7 @@ export class MovieController {
     }
 
     @Post()
-    create(@Body(ValidationPipe) movie: Movie): Movie {
+    create(@Body(ValidationPipe) movie: Omit<Movie, 'id'>): Movie {
         return this.movieService.addMovie(movie);
     }
 
@@ -35,9 +35,7 @@ export class MovieController {
     }
 
     @Delete(':title')
-    deleteMovie(@Param('title') title: string): Movie[] | null {
+    deleteMovie(@Param('title') title: string) {
         return this.movieService.deleteMovie(title);
     }
 }
-
-// export default MovieController;
