@@ -1,46 +1,33 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Body } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user';
+import { Prisma } from '@prisma/client';
 
 @Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
     @Post()
-    createUser(
-        @Body('name') name: string,
-        @Body('email') email: string,
-        @Body('password') password: string
-    ): User {
-        return this.userService.createUser(name, email, password);
-    }
-
-    @Get()
-    getAllUsers(): User[] {
-        return this.userService.getAllUsers();
+    async createUser(@Body() userData: Prisma.UserCreateInput) {
+        return this.userService.createUser(userData);
     }
 
     @Get(':id')
-    getUserById(@Param('id') id: string): User {
-    return this.userService.getUserById(id);
+    async getUserById(@Param('id') id: string) {
+        return this.userService.getUserById(id);
     }
 
-    @Put(':id')
-    updateUser(
-        @Param('id') id: string,
-        @Body('name') name?: string,
-        @Body('email') email?: string,
-        @Body('password') password?: string
-    ): User {
-        return this.userService.updateUser(id, name, email, password);
+    @Get('email/:email')
+    async getUserByEmail(@Param('email') email: string) {
+        return this.userService.getUserByEmail(email);
+    }
+
+    @Patch(':id')
+    async updateUser(@Param('id') id: string, @Body() userData: Prisma.UserUpdateInput) {
+        return this.userService.updateUser(id, userData);
     }
 
     @Delete(':id')
-    deleteUser(@Param('id') id: string): { message: string } {
-        const deleted = this.userService.deleteUser(id);
-
-        if (deleted) {
-            return { message: 'User deleted successfully' };
-        }
+    async deleteUser(@Param('id') id: string) {
+        return this.userService.deleteUser(id);
     }
 }

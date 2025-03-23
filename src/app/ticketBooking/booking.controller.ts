@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Get, HttpCode } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { ShowTimeService } from '../showtime/showtime.service';
 import { CreateBookingDto } from './create-booking';
@@ -12,8 +12,8 @@ export class BookingController {
     ) {}
 
     @Post()
-    async createBooking(
-    @Body() data: CreateBookingDto): Promise<{ bookingId: string }> {
+    @HttpCode(200)
+    async createBooking(@Body() data: CreateBookingDto): Promise<{ bookingId: string }> {
         const booking = await this.bookingService.createBooking(data);
         return { bookingId: booking.bookingId };
     }

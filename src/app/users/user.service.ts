@@ -1,86 +1,106 @@
-import { Injectable, BadRequestException, NotFoundException  } from "@nestjs/common";
-import { v4 as uuidv4 } from "uuid";
-
-import { User } from "./user";
-import { isValidEmail } from "src/utils/validation";
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { DatabaseService } from 'src/database/database.service';
+import { Prisma, User } from '@prisma/client';
+import { validate as isUUID } from 'uuid';
 
 @Injectable()
 export class UserService {
-    private users: User[] = [
-        new User(uuidv4(), "John Doe", "john.doe@example.com", "password123"),
-        new User(uuidv4(), "Jane Smith", "jane.smith@example.com", "securePass456"),
-        new User(uuidv4(), "Alice Johnson", "alice.j@example.com", "AlicePass789"),
-    ];
+    constructor(private readonly database: DatabaseService) {}
 
-    createUser(name: string, email: string, password: string): User {
+    private isValidEmail(email: string): boolean {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    async createUser(data: Prisma.UserCreateInput): Promise<User> {
+        const { name, email, password } = data;
+
+        // Validate name
         if (!name || name.trim().length === 0) {
             throw new BadRequestException('Name is required');
         }
-        if (!email || email.trim().length === 0) {
-            throw new BadRequestException('Email is required');
+
+        // Validate email
+        if (!email || !this.isValidEmail(email)) {
+            throw new BadRequestException('Invalid email format');
         }
-        if (!isValidEmail(email)) {
-            throw new BadRequestException("Invalid email format");
-        }
-        if (this.users.find(user => user.email === email)) {
+
+        // Check if email already exists
+        const existingUser = await this.database.user.findUnique({ where: { email } });
+        if (existingUser) {
             throw new BadRequestException('Email already exists');
         }
-        if (password.length < 6) {
-            throw new BadRequestException("Password must be at least 6 characters long");
-        } 
 
-        const newUser = new User(uuidv4(), name, email, password);
-        this.users.push(newUser);
-
-        return newUser;
-    }
-
-    getAllUsers(): User[] {
-        return this.users;
-    }
-
-    getUserById(id: string): User | undefined {
-        const user = this.users.find(user => user.id === id);
-        if (!user) {
-          throw new NotFoundException('User not found');
+        // Validate password length
+        if (!password || password.length < 6) {
+            throw new BadRequestException('Password must be at least 6 characters long');
         }
-        return user;    
+
+        try {
+            return await this.database.user.create({ data });
+        } catch (error) {
+            throw new BadRequestException('Error creating user: ' + error.message);
+        }
     }
 
-    updateUser(id: string, name?: string, email?: string, password?: string): User | null {
-        const user = this.getUserById(id);
-
-        if (!user) {
-            throw new NotFoundException('User not found');
+    async getUserById(id: string): Promise<User> {
+        if (!isUUID(id)) {
+            throw new BadRequestException('Invalid user ID format');
         }
-        if (name) user.name = name;
-        if (email) {
-            if (!isValidEmail(email)) {
-                throw new BadRequestException('Invalid email format');
-            }
-            if (this.users.find(user => user.email === email)) {
-                throw new BadRequestException('Email already in use');
-            }
-            user.email = email;
-        } 
-        if (password) {
-            if (password.length < 6) {
-                throw new BadRequestException('Password must be at least 6 characters long');
-            }
-            user.password = password;
-        } 
-    
-        user.updatedAt = new Date();
+
+        const user = await this.database.user.findUnique({ where: { id } });
+        if (!user) {
+            throw new NotFoundException(`User with ID ${id} not found`);
+        }
         return user;
     }
 
-    deleteUser(id: string) {
-        const index = this.users.findIndex(user => user.id === id);
-        if (index === -1) {
-            throw new NotFoundException('User not found');
+    async getUserByEmail(email: string): Promise<User> {
+        if (!this.isValidEmail(email)) {
+            throw new BadRequestException('Invalid email format');
         }
-    
-        this.users.splice(index, 1);
-        return true;
+
+        const user = await this.database.user.findUnique({ where: { email } });
+        if (!user) {
+            throw new NotFoundException(`User with email "${email}" not found`);
+        }
+        return user;
+    }
+
+    async updateUser(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+        if (!isUUID(id)) {
+            throw new BadRequestException('Invalid user ID format');
+        }
+
+        const existingUser = await this.database.user.findUnique({ where: { id } });
+        if (!existingUser) {
+            throw new NotFoundException(`User with ID ${id} not found`);
+        }
+
+        try {
+            return await this.database.user.update({
+                where: { id },
+                data,
+            });
+        } catch (error) {
+            throw new BadRequestException('Error updating user: ' + error.message);
+        }
+    }
+
+    async deleteUser(id: string): Promise<void> {
+        if (!isUUID(id)) {
+            throw new BadRequestException('Invalid user ID format');
+        }
+
+        const existingUser = await this.database.user.findUnique({ where: { id } });
+        if (!existingUser) {
+            throw new NotFoundException(`User with ID ${id} not found`);
+        }
+
+        try {
+            await this.database.user.delete({ where: { id } });
+        } catch (error) {
+            throw new BadRequestException('Error deleting user: ' + error.message);
+        }
     }
 }
