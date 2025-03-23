@@ -15,7 +15,7 @@ datasource db {
 
 model Movie {
   id          Int        @id @default(autoincrement())
-  title       String
+  title       String     @unique
   genre       String
   duration    Int
   rating      Float
@@ -25,8 +25,8 @@ model Movie {
 
 model Showtime {
   id        Int       @id @default(autoincrement())
-  movie     Movie     @relation(fields: [movieId], references: [id])
   movieId   Int
+  movie     Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
   theater   String
   startTime DateTime
   endTime   DateTime
@@ -36,11 +36,11 @@ model Showtime {
 
 model Booking {
   bookingId  String        @id @default(uuid())
-  showtime   Showtime      @relation(fields: [showtimeId], references: [id])
   showtimeId Int
+  showtime   Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Cascade) // Checks if showtime exists
   seatNumber Int
-  user       User          @relation(fields: [userId], references: [id])
   userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   status     BookingStatus
   createdAt  DateTime      @default(now())
 }

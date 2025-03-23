@@ -1,41 +1,39 @@
-import { Controller, Get, Post, Body, Param, Delete, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, HttpCode } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
-import { Movie } from './movie';
-import { UpdateMovie } from './update-movie';
+import { Prisma } from '@prisma/client';
 
 @Controller('movies')
 export class MovieController {
-    // private movieService: MovieService;
-
-    // constructor() {
-    //     this.movieService = new MovieService();
-    // }
+    
     constructor(private readonly movieService: MovieService) {}
 
     @Get('/all') // GET movies/all
-    getAllMovies(): Movie[] {
+    async getAllMovies() {
         return this.movieService.getAllMovies();
     }
 
     @Post()
-    create(@Body(ValidationPipe) movie: Omit<Movie, 'id'>): Movie {
+    @HttpCode(200)
+    // create(@Body(ValidationPipe) movie: Omit<Movie, 'id'>): Movie {
+    async create(@Body(ValidationPipe) movie: Prisma.MovieCreateInput) {
         return this.movieService.addMovie(movie);
     }
 
 
     @Get(':title') // GET movies/:title
-    getMovieByTitle(@Param('title') title: string): Movie | undefined {
+    async getMovieByTitle(@Param('title') title: string) {
         return this.movieService.getMovieByTitle(title);
     }
 
     @Post('/update/:title')
-    update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: UpdateMovie): Movie | null {
+    @HttpCode(200)
+    async update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: Prisma.MovieUpdateInput) {
         return this.movieService.updateMovie(title, movieUpdate);
     }
 
     @Delete(':title')
-    deleteMovie(@Param('title') title: string) {
+    async deleteMovie(@Param('title') title: string) {
         return this.movieService.deleteMovie(title);
     }
 }

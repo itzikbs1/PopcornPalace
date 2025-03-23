@@ -1,33 +1,38 @@
-import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, ParseIntPipe, HttpCode } from '@nestjs/common';
 
 import { ShowTimeService } from "./showtime.service";
-import { ShowTime } from "./showtime";
-import { UpdateShowTime } from './update-showtime';
+import { Prisma } from '@prisma/client';
 
 @Controller('showtimes')
 export class ShowTimeController {
 
     constructor(private readonly showTimeService: ShowTimeService) {}
 
+    @Get('/all')
+    async getAllShowTimes() {
+        return this.showTimeService.getAllShowTimes();
+    }
     @Get(':id')
-    getShowTimeById(@Param('id', ParseIntPipe) id: number): ShowTime {
+    async getShowTimeById(@Param('id', ParseIntPipe) id: number) {
         return this.showTimeService.getShowTimeById(id);
     }
 
     @Post()
-    create(@Body(ValidationPipe) showTime: Omit<ShowTime, 'id'>): ShowTime {
+    @HttpCode(200)
+    async create(@Body(ValidationPipe) showTime: Omit<Prisma.ShowtimeCreateInput, 'movie'> & { movieId: number }) {
         return this.showTimeService.addShowTime(showTime);
     }
 
     @Post('/update/:id')
-    update(@Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) updatedData: Partial<Omit<ShowTime, 'id'>>): ShowTime | null {
-        return this.showTimeService.updateShowTime(id, updatedData);
+    @HttpCode(200)
+    async update(@Param('id', ParseIntPipe) id: number,
+    @Body(ValidationPipe) showTimeUpdate: Omit<Prisma.ShowtimeUpdateInput, 'movie'> & { movieId: number }) {
+        return this.showTimeService.updateShowTime(id, showTimeUpdate);
     }
 
     @Delete(':id')
-    delete(@Param('id', ParseIntPipe) id: number): { message: string } {
-        this.showTimeService.deleteShowTime(id);
-        return { message: 'Showtime deleted successfully' };
+    async delete(@Param('id', ParseIntPipe) id: number) {
+        return this.showTimeService.deleteShowTime(id);
+        // return { message: 'Showtime deleted successfully' };
     }
 }

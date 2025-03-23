@@ -1,59 +1,93 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 
-import { Movie } from './movie';
-import { UpdateMovie } from './update-movie';
+import { Prisma } from '@prisma/client';
+import { DatabaseService } from 'src/database/database.service';
+
 
 @Injectable()
 export class MovieService {
-    private movies: Movie[] = [
-        { id: 1, title: "Inception", genre: "Sci-Fi", duration: 148, rating: 8.8, release_year: 2010 },
-        { id: 2, title: "The Dark Knight", genre: "Action", duration: 152, rating: 9.0, release_year: 2008 },
-        { id: 3, title: "Interstellar", genre: "Sci-Fi", duration: 169, rating: 8.6, release_year: 2014 },
-    ];
 
-    private idCounter = 4;
-    // constructor() {
-    //     this.movies = [];
-    // }
+    constructor(private readonly database: DatabaseService) {}
 
-    addMovie(movie: Omit<Movie, 'id'>): Movie {
-        const existingMovie = this.movies.find(m => m.title === movie.title && m.release_year === movie.release_year);
-        if (existingMovie) {
-            throw new BadRequestException(`Movie "${movie.title}" from ${movie.release_year} already exists.`);
+    async getAllMovies() {
+        const movies = await this.database.movie.findMany();
+
+        if (movies.length === 0) {
+            throw new NotFoundException('There are no movies available');
         }
-        const newMovie: Movie = { id: this.idCounter++, ...movie };
-        this.movies.push(newMovie);
-        return newMovie;
+
+        return movies;
     }
 
-    getAllMovies(): Movie[] {
-        if (this.movies.length === 0) throw new NotFoundException('Their are no movies available');
-        return this.movies;
+    async addMovie(movie: Prisma.MovieCreateInput) {
+        if (!movie.title || movie.title.trim() === '') {
+            throw new BadRequestException('Title is required');
+        }
+        try {
+            return await this.database.movie.create({ data: movie });
+        } catch (error) {
+            throw new BadRequestException('Error creating movie: ' + error.message);
+        }
     }
 
-    getMovieByTitle(title: string): Movie | undefined {
-        return this.movies.find(movie => movie.title === title);
+    async getMovieByTitle(title: string) {
+        if (!title.trim()) {
+            throw new BadRequestException('Title cannot be empty');
+        }
+
+        const movie = await this.database.movie.findUnique({ where: { title } });
+        if (!movie) {
+            throw new NotFoundException(`Movie with title "${title}" not found`);
+        }
+        return movie;
     }
     
-    getMovieById(id: number): Movie | undefined {
-        return this.movies.find(movie => movie.id === id);
+    async getMovieById(id: number) {
+        if (!id) {
+            throw new BadRequestException('Movie ID is required');
+        }
+
+        const movie = await this.database.movie.findUnique({ where: { id } });
+        if (!movie) {
+            throw new NotFoundException(`Movie with ID ${id} not found`);
+        }
+        return movie;
     }
 
-    updateMovie(title: string, updatedMovie: UpdateMovie): Movie | null {
-        const index = this.movies.findIndex(movie => movie.title === title);
-        if (index !== -1) {
-            this.movies[index] = { ...this.movies[index], ...updatedMovie };
-            return this.movies[index];
+    async updateMovie(title: string, movieUpdate: Prisma.MovieUpdateInput) {
+        if (!title.trim()) {
+            throw new BadRequestException('Title cannot be empty');
         }
-        throw new NotFoundException(`Movie ${title} Not Found`)
-        return null;
+
+        const existingMovie = await this.database.movie.findUnique({ where: { title } });
+        if (!existingMovie) {
+            throw new NotFoundException(`Movie with title "${title}" not found`);
+        }
+
+        try {
+            return await this.database.movie.update({
+                where: { title },
+                data: movieUpdate,
+            });
+        } catch (error) {
+            throw new BadRequestException('Error updating movie: ' + error.message);
+        }
     }
 
-    deleteMovie(title: string)  {
-        const index = this.movies.findIndex(movie => movie.title === title);
-        if (index === -1) {
-            throw new NotFoundException(`Movie ${title} Not Found For Deleting`)
+    async deleteMovie(title: string) {
+        if (!title.trim()) {
+            throw new BadRequestException('Title cannot be empty');
         }
-        this.movies.splice(index, 1);
+
+        const existingMovie = await this.database.movie.findUnique({ where: { title } });
+        if (!existingMovie) {
+            throw new NotFoundException(`Movie with title "${title}" not found`);
+        }
+
+        try {
+            return await this.database.movie.delete({ where: { title } });
+        } catch (error) {
+            throw new BadRequestException('Error deleting movie: ' + error.message);
+        }
     }
 }

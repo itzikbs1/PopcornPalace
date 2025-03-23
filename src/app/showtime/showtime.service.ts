@@ -1,45 +1,53 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
 
-import { ShowTime } from "./showtime";
-import { UpdateShowTime } from './update-showtime';
-import { MovieService } from "../movie/movie.service"; 
+// import { ShowTime } from "./showtime";
+// import { UpdateShowTime } from './update-showtime';
+// import { MovieService } from "../movie/movie.service";
+import { Prisma } from "@prisma/client"; 
+
+import { DatabaseService } from "src/database/database.service";
 
 @Injectable()
 export class ShowTimeService {
-    private showtimes: ShowTime[] = [
-        { id: 1, movieId: 1, theater: "Cinema City", startTime: new Date("2025-03-21T16:05:00Z"), endTime: new Date("2025-04-10T20:30:00Z"), price: 50.0, bookings: [] },
-        { id: 2, movieId: 2, theater: "IMAX", startTime: new Date("2025-03-20T18:00:00Z"), endTime: new Date("2025-04-11T22:45:00Z"), price: 70.0, bookings: [] },
-        { id: 3, movieId: 3, theater: "Downtown Theater", startTime: new Date("2025-04-12T17:30:00Z"), endTime: new Date("2025-04-12T19:45:00Z"), price: 45.0, bookings: [] }
-    ];
+    // private showtimes: ShowTime[] = [
+    //     { id: 1, movieId: 1, theater: "Cinema City", startTime: new Date("2025-03-21T16:05:00Z"), endTime: new Date("2025-04-10T20:30:00Z"), price: 50.0, bookings: [] },
+    //     { id: 2, movieId: 2, theater: "IMAX", startTime: new Date("2025-03-20T18:00:00Z"), endTime: new Date("2025-04-11T22:45:00Z"), price: 70.0, bookings: [] },
+    //     { id: 3, movieId: 3, theater: "Downtown Theater", startTime: new Date("2025-04-12T17:30:00Z"), endTime: new Date("2025-04-12T19:45:00Z"), price: 45.0, bookings: [] }
+    // ];
     
-    private idCounter = 4; // Start ID from 4 since 1-3 are predefined
+    // private idCounter = 4; // Start ID from 4 since 1-3 are predefined
 
     // constructor() {
     //     this.showtimes = [];
     // }
-    constructor(private readonly movieService: MovieService) {}
+    constructor(private readonly database: DatabaseService) {}
 
-    getShowTimeById(id: number): ShowTime {
-        const showtime = this.showtimes.find(showtime => showtime.id === id);
+    async getAllShowTimes() {
+        const showtimes = await this.database.showtime.findMany();
+        if (showtimes.length === 0) {
+            throw new NotFoundException("There are no showtimes available");
+        }
+        return showtimes;
+    }
+
+    async getShowTimeById(id: number) {
+        if (!id) {
+            throw new BadRequestException("Showtime ID is required");
+        }
+        const showtime = await this.database.showtime.findUnique({ where: { id } }) /// (showtime => showtime.id === id);
         if (!showtime) {
             throw new NotFoundException(`Showtime with ID ${id} not found`);
         }
         return showtime;
     }
 
-    addShowTime(showtimeData: Omit<ShowTime, 'id'>): ShowTime { //Omit<ShowTime, id> Create a new type that removes `id`
-        if (!showtimeData.movieId || !showtimeData.price || !showtimeData.theater || !showtimeData.startTime || !showtimeData.endTime) {
+    async addShowTime(showtimeData: Omit<Prisma.ShowtimeCreateInput, 'movie'> & { movieId: number }) { //Omit<ShowTime, id> Create a new type that removes `id`
+        if (!showtimeData.movieId || !showtimeData.theater || !showtimeData.startTime || !showtimeData.endTime) {
             throw new BadRequestException('Missing required showtime fields');
         }
 
-        // Check if movie exists
-        try {
-            // You need to add a method to MovieService to get movie by ID
-            const movie = this.movieService.getMovieById(showtimeData.movieId);
-            if (!movie) {
-                throw new NotFoundException(`Movie with ID ${showtimeData.movieId} not found`);
-            }
-        } catch (error) {
+        const movieExists = await this.database.movie.findUnique({ where: { id: showtimeData.movieId } });
+        if (!movieExists) {
             throw new NotFoundException(`Movie with ID ${showtimeData.movieId} not found`);
         }
 
@@ -47,27 +55,46 @@ export class ShowTimeService {
         const newEndTime = new Date(showtimeData.endTime);
 
         if (newStartTime >= newEndTime) {
-            throw new BadRequestException('Start time must be before end time.')
+            throw new BadRequestException('Start time must be before end time.');
         }
-
-        for (const existingShow of this.showtimes) {
-
-            if (existingShow.theater === showtimeData.theater) {
-                const existingStartTime = new Date(existingShow.startTime);
-                const existingEndTime = new Date(existingShow.endTime);
-
-                if (
-                    (newStartTime <= existingStartTime && existingStartTime < newEndTime) ||
-                    (newStartTime < existingEndTime && existingEndTime <= newEndTime) ||
-                    (existingStartTime <= newStartTime && newEndTime <= existingEndTime)
-                ) {
-                    throw new ConflictException(`Showtime overlaps with existing showtime in theater ${existingShow.theater}`);
-                }
+        // Check for overlapping showtimes in the same theater
+        const overlappingShowtime = await this.database.showtime.findFirst({
+            where: {
+                theater: showtimeData.theater,
+                OR: [
+                    {
+                        startTime: { lte: newStartTime },
+                        endTime: { gt: newStartTime }
+                    },
+                    {
+                        startTime: { lt: newEndTime },
+                        endTime: { gte: newEndTime }
+                    },
+                    {
+                        startTime: { gte: newStartTime },
+                        endTime: { lte: newEndTime }
+                    }
+                ]
             }
+        });
+
+        if (overlappingShowtime) {
+            throw new ConflictException(`Showtime overlaps with an existing showtime in theater ${showtimeData.theater}`);
         }
-        const newShowtime: ShowTime = { id: this.idCounter++, ...showtimeData, bookings: [] };
-        this.showtimes.push(newShowtime);
-        return newShowtime;
+
+        try {
+            return await this.database.showtime.create({ 
+                data: { 
+                    movie: { connect: { id: showtimeData.movieId } }, // Correctly link movie
+                    theater: showtimeData.theater,
+                    startTime: showtimeData.startTime,
+                    endTime: showtimeData.endTime,
+                    price: showtimeData.price
+                } 
+            });
+        } catch (error) {
+            throw new ConflictException("Error creating showtime: " + error.message);
+        }
     }
 
     // getAllShowTimes(): ShowTime[] {
@@ -80,61 +107,62 @@ export class ShowTimeService {
 
 
 
-    updateShowTime(id: number, updatedData: Partial<Omit<ShowTime, 'id'>>): ShowTime {
-        const showtimeIndex = this.showtimes.findIndex(showtime => showtime.id === id);
-        if (showtimeIndex === -1) {
+    async updateShowTime(id: number, showTimeUpdate: Omit<Prisma.ShowtimeUpdateInput, 'movie'> & { movieId?: number }) {
+        const existingShowTime = await this.database.showtime.findUnique({ where: { id } });
+        if (!existingShowTime) {
             throw new NotFoundException(`Showtime with ID ${id} not found`);
         }
-
-        // Check if movie exists
-        try {
-            // You need to add a method to MovieService to get movie by ID
-            const movie = this.movieService.getMovieById(updatedData.movieId);
-            if (!movie) {
-                throw new NotFoundException(`Movie with ID ${updatedData.movieId} not found`);
+        if (showTimeUpdate.movieId) {
+            const movieExists = await this.database.movie.findUnique({ where: { id: showTimeUpdate.movieId }});
+            if (!movieExists) {
+                throw new NotFoundException(`Movie with ID ${showTimeUpdate.movieId} not found`);
             }
-        } catch (error) {
-            throw new NotFoundException(`Movie with ID ${updatedData.movieId} not found`);
         }
 
-        const existingShowtime = this.showtimes[showtimeIndex];
-
-        // Check if the user is modifying the theater, startTime, or endTime
-        const newTheater = updatedData.theater ?? existingShowtime.theater;
-        const newStartTime = updatedData.startTime ?? existingShowtime.startTime;
-        const newEndTime = updatedData.endTime ?? existingShowtime.endTime;
+        const newStartTime = showTimeUpdate.startTime ? new Date(showTimeUpdate.startTime as string) : new Date(existingShowTime.startTime);
+        const newEndTime = showTimeUpdate.endTime ? new Date(showTimeUpdate.endTime as string) : new Date(existingShowTime.endTime);
 
         if (newStartTime >= newEndTime) {
             throw new BadRequestException('Start time must be before end time.');
         }
 
-        // Check for overlapping showtimes in the same theater
-        for (const otherShow of this.showtimes) {
-            if (otherShow.id !== id && otherShow.theater === newTheater) {
-                const existingStartTime = otherShow.startTime;
-                const existingEndTime = otherShow.endTime;
-
-                if (
-                    (newStartTime <= existingStartTime && existingStartTime < newEndTime) ||
-                    (newStartTime < existingEndTime && existingEndTime <= newEndTime) ||
-                    (existingStartTime <= newStartTime && newEndTime <= existingEndTime)
-                ) {
-                    throw new ConflictException(`Updated showtime overlaps with an existing showtime in theater ${newTheater}`);
-                }
+        const overlappingShowtime = await this.database.showtime.findFirst({
+            where: {
+                theater: existingShowTime.theater,
+                id: { not: id }, // Exclude the current showtime
+                OR: [
+                    { startTime: { lte: newStartTime }, endTime: { gt: newStartTime } },
+                    { startTime: { lt: newEndTime }, endTime: { gte: newEndTime } },
+                    { startTime: { gte: newStartTime }, endTime: { lte: newEndTime } }
+                ]
             }
+        });
+
+        if (overlappingShowtime) {
+            throw new ConflictException(`Updated showtime overlaps with an existing showtime in theater ${existingShowTime.theater}`);
         }
 
-        // Update the showtime
-        this.showtimes[showtimeIndex] = { ...existingShowtime, ...updatedData };
-        return this.showtimes[showtimeIndex];
+        try {
+            return await this.database.showtime.update({
+                where: { id },
+                data: showTimeUpdate,
+            });
+        } catch (error) {
+            throw new BadRequestException("Error updating showtime: " + error.message);
+        }
     }
     
-    deleteShowTime(id: number) {
-        const index = this.showtimes.findIndex(showtime => showtime.id === id);
-        if (index === -1) {
-            throw new NotFoundException('This ShowTime Not Found For Deleting');
+    async deleteShowTime(id: number) {
+        const existingShowTime = await this.database.showtime.findUnique({ where: { id } });
+        if (!existingShowTime) {
+            throw new NotFoundException(`Showtime with ID ${id} not found`);
         }
-        this.showtimes.splice(index, 1);        
+
+        try {
+            return await this.database.showtime.delete({ where: { id } });
+        } catch (error) {
+            throw new BadRequestException("Error deleting showtime: " + error.message);
+        }
     }
 
 }
