@@ -16,7 +16,7 @@ It provides RESTful APIs for handling:
 
 ```sh
 git clone https://github.com/itzikbs1/PopcornPalace
-cd popcorn_palace_typescript
+cd PopcornPalace
 ```
 
 ### **2️⃣ Install Dependencies**
@@ -35,6 +35,12 @@ docker-compose up -d
 
 ```sh
 npx prisma migrate deploy
+```
+
+### **Generate prisma**
+
+```sh
+npx prisma generate
 ```
 
 ### **5️⃣ Start the Server**
