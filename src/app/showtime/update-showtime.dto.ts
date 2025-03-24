@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsDate, IsNumber, IsPositive, isString, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsNumber, IsPositive, IsString } from 'class-validator';
 
 export class UpdateShowtimeDto {
     @IsOptional()

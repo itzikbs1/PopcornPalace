@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsPositive, IsDate, IsNumber, IsString, IsDefined } from 'class-validator';
+import { IsInt, IsNotEmpty, IsPositive, IsNumber, IsString, IsDefined } from 'class-validator';
 
 export class CreateShowtimeDto {
     @IsDefined({ message: 'Movie ID is required' })
@@ -6,8 +6,6 @@ export class CreateShowtimeDto {
     movieId: number;
 
     @IsDefined({ message: 'Start time is required' })
-    // @IsDate({ message: 'Start time must be a valid date' })
-    // @IsNotEmpty()
     @IsString({ message: 'Start time must be a valid string' })
     startTime: Date;
 

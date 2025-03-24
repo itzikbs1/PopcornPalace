@@ -8,9 +8,7 @@ describe('ShowTimeService', () => {
     let service: ShowTimeService;
     let database: DatabaseService;
 
-    beforeAll(async () => {
-        // process.env = { ...process.env, NODE_ENV: 'test' };
-    
+    beforeAll(async () => {    
         const module: TestingModule = await Test.createTestingModule({
           imports: [ConfigModule.forRoot({ isGlobal: true })],
           providers: [ShowTimeService, DatabaseService, ConfigService],
@@ -23,11 +21,9 @@ describe('ShowTimeService', () => {
         await database.showtime.deleteMany({});
         await database.movie.deleteMany({});
         await database.user.deleteMany({});
-        // await database.$executeRaw`TRUNCATE TABLE "showtimes" RESTART IDENTITY CASCADE;`;
       });
     
       afterAll(async () => {
-        // await database.$executeRaw`TRUNCATE TABLE "showtimes" RESTART IDENTITY CASCADE;`;
         await database.onModuleDestroy();
       });
 

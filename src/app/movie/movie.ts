@@ -22,7 +22,6 @@ export class CreateMovieDto {
 
     @IsNotEmpty({ message: 'Release year is required' })
     @IsInt({ message: 'Release year must be an integer' })
-    // @Min(1900, { message: 'Release year must be after 1900' })
     @Max(new Date().getFullYear(), { message: `Release year cannot be in the future` })
     releaseYear: number;
 }

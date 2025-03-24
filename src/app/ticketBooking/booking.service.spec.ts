@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { BookingService } from './booking.service';
 import { DatabaseService } from '../../database/database.service';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
 
 describe('BookingService', () => {
@@ -11,7 +11,6 @@ describe('BookingService', () => {
     let database: DatabaseService;
 
     beforeAll(async () => {
-        // process.env = { ...process.env, NODE_ENV: 'test' }; // Ensure test environment is loaded
     
         const module: TestingModule = await Test.createTestingModule({
           imports: [ConfigModule.forRoot({ isGlobal: true })],
@@ -20,17 +19,15 @@ describe('BookingService', () => {
     
         service = module.get<BookingService>(BookingService);
         database = module.get<DatabaseService>(DatabaseService);
-        await database.onModuleInit(); // Connect to DB before tests
+        await database.onModuleInit(); 
         await database.booking.deleteMany({});
         await database.showtime.deleteMany({});
         await database.movie.deleteMany({});
         await database.user.deleteMany({});
-        // await database.$executeRaw`TRUNCATE TABLE "bookings" RESTART IDENTITY CASCADE;`;
       });
     
       afterAll(async () => {
-        // await database.$executeRaw`TRUNCATE TABLE "bookings" RESTART IDENTITY CASCADE;`;
-        await database.onModuleDestroy(); // Disconnect after tests
+        await database.onModuleDestroy();
       });
 
     it('should be defined', () => {

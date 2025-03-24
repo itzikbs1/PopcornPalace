@@ -18,15 +18,15 @@ describe('Showtimes API (e2e)', () => {
     await app.init();
   
     const prismaService = app.get(DatabaseService);
-    // await prismaService.booking.deleteMany();
-    // await prismaService.showtime.deleteMany();
-    // await prismaService.movie.deleteMany();
+    await prismaService.booking.deleteMany();
+    await prismaService.showtime.deleteMany();
+    await prismaService.movie.deleteMany();
 
-    await prismaService.$transaction([
-      prismaService.booking.deleteMany(),
-      prismaService.showtime.deleteMany(),
-      prismaService.movie.deleteMany(),
-  ]);
+  //   await prismaService.$transaction([
+  //     prismaService.booking.deleteMany(),
+  //     prismaService.showtime.deleteMany(),
+  //     prismaService.movie.deleteMany(),
+  // ]);
   
     const movie = await prismaService.movie.create({
       data: {
@@ -38,7 +38,6 @@ describe('Showtimes API (e2e)', () => {
       },
   });
   createdMovieId = movie.id;
-  // console.log('Created movie with ID:', createdMovieId, 'Type:', typeof createdMovieId);
   });
 
   afterAll(async () => {
@@ -78,9 +77,7 @@ describe('Showtimes API (e2e)', () => {
   });
 
   it('/showtimes/:id (DELETE) - should delete a showtime', async () => {
-    const response = await request(app.getHttpServer()).delete(`/showtimes/${createdShowtimeId}`);
-    // console.log('response ', response.body);
-    
+    const response = await request(app.getHttpServer()).delete(`/showtimes/${createdShowtimeId}`);    
     expect(response.status).toBe(200);
   });
 });

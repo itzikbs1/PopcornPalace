@@ -9,7 +9,6 @@ describe('MovieService', () => {
     let database: DatabaseService;
 
     beforeAll(async () => {
-        // process.env = { ...process.env, NODE_ENV: 'test' };
     
         const module: TestingModule = await Test.createTestingModule({
           imports: [ConfigModule.forRoot({ isGlobal: true })],
@@ -23,11 +22,9 @@ describe('MovieService', () => {
         await database.showtime.deleteMany({});
         await database.movie.deleteMany({});
         await database.user.deleteMany({});
-        // await database.$executeRaw`TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE;`;
       });
     
       afterAll(async () => {
-        // await database.$executeRaw`TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE;`;
         await database.onModuleDestroy();
       });
 

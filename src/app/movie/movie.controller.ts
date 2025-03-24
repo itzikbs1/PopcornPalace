@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, HttpCode, UsePipes } from '@nestjs/common';
 
 import { MovieService } from './movie.service';
-import { CreateMovieDto } from './movie'; //from './create-movie.dto';
+import { CreateMovieDto } from './movie';
 import { UpdateMovieDto } from './update-movie.dto';
 
 @Controller('movies')
@@ -9,7 +9,7 @@ export class MovieController {
     
     constructor(private readonly movieService: MovieService) {}
 
-    @Get('/all') // GET movies/all
+    @Get('/all')
     async getAllMovies() {
         return this.movieService.getAllMovies();
     }
@@ -22,7 +22,7 @@ export class MovieController {
     }
 
 
-    @Get(':title') // GET movies/:title
+    @Get(':title')
     async getMovieByTitle(@Param('title') title: string) {
         return this.movieService.getMovieByTitle(title);
     }

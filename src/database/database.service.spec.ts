@@ -6,8 +6,6 @@ describe('DatabaseService', () => {
   let databaseService: DatabaseService;
 
   beforeAll(async () => {
-    process.env = { ...process.env, NODE_ENV: 'test' };
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true })],
       providers: [DatabaseService, ConfigService],

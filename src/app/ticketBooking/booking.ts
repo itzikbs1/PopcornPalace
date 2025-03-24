@@ -12,7 +12,7 @@ export class Booking {
         showtimeId: number,
         seatNumber: number,
         userId: string,
-        status: 'CONFIRMED' | 'CANCELED', // Default to 'pending'
+        status: 'CONFIRMED' | 'CANCELED',
         createdAt?: Date
       ) {
         this.bookingId = bookingId;
@@ -23,23 +23,3 @@ export class Booking {
         this.createdAt = createdAt || new Date();
       }
     }
-// import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Genereted } from 'typeorm';
-// import { ShowTime } from '../showtime/showtime'; //maybe change to showtime.entity
-
-// @Entity()
-// export class Booking {
-//     @PrimaryGeneratedColumn('uuid')
-//     id: string;
-
-//     @ManyToOne(() => ShowTime, (showtime) => showtime.bookings)
-//     showtimeId: number;
-
-//     @Column()
-//     seatNumber: number;
-
-//     @Column({ type: 'uuid' })
-//     userId: string;
-
-//     @Column({ type: 'enum', enum: ['CONFIRMED', 'CANCELED'], default: 'CONFIRMED'})
-//     status: 'CONFIRMED' | 'CANCELED'
-// }

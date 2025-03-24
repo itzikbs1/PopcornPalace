@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config(); // This loads the .env file
+config();
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';

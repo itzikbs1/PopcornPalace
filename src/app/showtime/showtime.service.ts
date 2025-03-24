@@ -1,9 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
-
-// import { ShowTime } from "./showtime";
-// import { UpdateShowTime } from './update-showtime';
-// import { MovieService } from "../movie/movie.service";
-import { Prisma } from "@prisma/client"; 
+import { Injectable, BadRequestException, ConflictException } from "@nestjs/common";
 
 import { DatabaseService } from "../../database/database.service";
 import { CreateShowtimeDto } from "./create-showtime.dto";
@@ -26,14 +21,14 @@ export class ShowTimeService {
         if (!id) {
             throw new BadRequestException("Showtime ID is required");
         }
-        const showtime = await this.database.showtime.findUnique({ where: { id } }) /// (showtime => showtime.id === id);
+        const showtime = await this.database.showtime.findUnique({ where: { id } })
         if (!showtime) {
             throw new BadRequestException(`Showtime with ID ${id} not found`);
         }
         return showtime;
     }
 
-    async addShowTime(showtimeData: CreateShowtimeDto) { //Omit<ShowTime, id> Create a new type that removes `id`
+    async addShowTime(showtimeData: CreateShowtimeDto) { 
         if (!showtimeData.movieId || !showtimeData.price || !showtimeData.theater || !showtimeData.startTime || !showtimeData.endTime) {
             throw new BadRequestException('Missing required showtime fields');
         }
@@ -111,7 +106,7 @@ export class ShowTimeService {
         const overlappingShowtime = await this.database.showtime.findFirst({
             where: {
                 theater: existingShowTime.theater,
-                id: { not: id }, // Exclude the current showtime
+                id: { not: id },
                 OR: [
                     { startTime: { lte: newStartTime }, endTime: { gt: newStartTime } },
                     { startTime: { lt: newEndTime }, endTime: { gte: newEndTime } },

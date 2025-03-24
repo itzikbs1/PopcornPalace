@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DatabaseService } from 'src/database/database.service';
+
 describe('Movies API (e2e)', () => {
   let app: INestApplication;
 
@@ -37,9 +38,6 @@ describe('Movies API (e2e)', () => {
     const response = await request(app.getHttpServer()).get('/movies/all');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
-
-
-    const movies = []
   });
 
   it('/movies (POST) - should create a movie', async () => {

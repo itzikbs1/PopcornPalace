@@ -1,13 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 
-import { Booking, Prisma } from '@prisma/client';
+import { Booking } from '@prisma/client';
 import { DatabaseService } from '../../database/database.service';
 import { CreateBookingDto } from './create-booking';
 
 @Injectable()
 export class BookingService {
 
-    // constructor(private readonly showtimeService: ShowTimeService, private readonly userService: UserService) {}
     constructor(private readonly dbService: DatabaseService) {}
 
 
@@ -61,22 +60,6 @@ export class BookingService {
 
         return { "bookingId": booking.bookingId};
       }
-
-    // cancelBooking(bookingId: string): { message: string } {
-    //     const booking = this.bookings.find((b) => b.bookingId === bookingId);
-        
-    //     if (!booking) {
-    //         throw new NotFoundException('Booking not found');
-    //     }
-      
-    //     if (booking.status === 'CANCELED') {
-    //         throw new BadRequestException('Booking is already canceled');
-    //     }
-    //     booking.status = 'CANCELED';
-        
-    //     return { message: 'Booking canceled successfuly' };
-    // }
-
     
     async getBookingById(bookingId: string): Promise<Booking> {
       
