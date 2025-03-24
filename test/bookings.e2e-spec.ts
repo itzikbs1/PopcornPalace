@@ -33,6 +33,7 @@ describe('Bookings API (e2e)', () => {
         releaseYear: 2010
       },
     });
+    
   createdMovieId = movie.id;
   const showtime = await prismaService.showtime.create({
     data: {
