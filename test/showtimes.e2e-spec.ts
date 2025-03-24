@@ -18,10 +18,16 @@ describe('Showtimes API (e2e)', () => {
     await app.init();
   
     const prismaService = app.get(DatabaseService);
-    await prismaService.booking.deleteMany();
-    await prismaService.showtime.deleteMany();
-    await prismaService.movie.deleteMany();
+    // await prismaService.booking.deleteMany();
+    // await prismaService.showtime.deleteMany();
+    // await prismaService.movie.deleteMany();
 
+    await prismaService.$transaction([
+      prismaService.booking.deleteMany(),
+      prismaService.showtime.deleteMany(),
+      prismaService.movie.deleteMany(),
+  ]);
+  
     const movie = await prismaService.movie.create({
       data: {
         title: 'Inception',
@@ -67,15 +73,14 @@ describe('Showtimes API (e2e)', () => {
       startTime: '2025-02-14T11:47:46.125405Z', 
       endTime: '2025-02-14T14:47:46.125405Z'
     };
-    // console.log('createdShowtimeId ', createdShowtimeId);
     const response = await request(app.getHttpServer()).post(`/showtimes/update/${createdShowtimeId}`).send(updatedShowtime);
-    // console.log('reponse.body ', response.body);
     expect(response.status).toBe(200);
   });
 
   it('/showtimes/:id (DELETE) - should delete a showtime', async () => {
-    // console.log('74createdShowtimeId ', createdShowtimeId);
     const response = await request(app.getHttpServer()).delete(`/showtimes/${createdShowtimeId}`);
+    // console.log('response ', response.body);
+    
     expect(response.status).toBe(200);
   });
 });

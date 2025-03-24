@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MovieService } from './movie.service';
 import { DatabaseService } from '../../database/database.service';
 import { BadRequestException } from '@nestjs/common';
@@ -7,28 +8,28 @@ describe('MovieService', () => {
     let service: MovieService;
     let database: DatabaseService;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
+        // process.env = { ...process.env, NODE_ENV: 'test' };
+    
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                MovieService,
-                {
-                    provide: DatabaseService,
-                    useValue: {
-                        movie: {
-                            findMany: jest.fn(),
-                            findUnique: jest.fn(),
-                            create: jest.fn(),
-                            update: jest.fn(),
-                            delete: jest.fn(),
-                        },
-                    },
-                },
-            ],
+          imports: [ConfigModule.forRoot({ isGlobal: true })],
+          providers: [MovieService, DatabaseService, ConfigService],
         }).compile();
-
+    
         service = module.get<MovieService>(MovieService);
         database = module.get<DatabaseService>(DatabaseService);
-    });
+        await database.onModuleInit();
+        await database.booking.deleteMany({});
+        await database.showtime.deleteMany({});
+        await database.movie.deleteMany({});
+        await database.user.deleteMany({});
+        // await database.$executeRaw`TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE;`;
+      });
+    
+      afterAll(async () => {
+        // await database.$executeRaw`TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE;`;
+        await database.onModuleDestroy();
+      });
 
     it('should be defined', () => {
         expect(service).toBeDefined();
@@ -77,10 +78,14 @@ describe('MovieService', () => {
         const updatedMovie = { ...existingMovie, rating: 9.5 };
 
         jest.spyOn(database.movie, 'findUnique').mockResolvedValue(existingMovie);
+        jest.spyOn(database.movie, 'findUnique').mockResolvedValue(updatedMovie);
+
         jest.spyOn(database.movie, 'update').mockResolvedValue(updatedMovie);
 
-        const result = await service.updateMovie('Inception', { rating: 9.5 });
-        expect(result.rating).toBe(9.5);
+        await service.updateMovie('Inception', { rating: 9.5 });
+        
+        const movieUpdate = await service.getMovieByTitle('Inception');
+        expect(movieUpdate.rating).toBe(9.5);
     });
 
     // Update a movie (Movie does not exist)
@@ -105,7 +110,7 @@ describe('MovieService', () => {
         jest.spyOn(database.movie, 'delete').mockResolvedValue(existingMovie);
 
         const result = await service.deleteMovie('Inception');
-        expect(result).toEqual(existingMovie);
+        expect(result).toBeUndefined();
     });
 
     // Delete a movie (Movie does not exist)

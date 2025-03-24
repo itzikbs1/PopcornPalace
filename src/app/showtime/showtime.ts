@@ -20,16 +20,18 @@ export class ShowTime {
     @IsNotEmpty()
     theater: string;
 
-    @IsDate()
-    @Type(() => Date)
-    @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    // @IsDate()
+    // @Type(() => Date)
+    // @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
     @IsNotEmpty()
+    @IsString()
     startTime: Date;
 
-    @IsDate()
-    @Type(() => Date)
-    @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
+    // @IsDate()
+    // @Type(() => Date)
+    // @Transform(({ value }) => value ? new Date(value) : undefined, { toClassOnly: true })
     @IsNotEmpty()
+    @IsString()
     endTime: Date;
 
     @IsNumber()

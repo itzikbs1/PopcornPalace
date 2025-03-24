@@ -19,6 +19,7 @@ describe('Movies API (e2e)', () => {
     await prismaService.showtime.deleteMany();
     await prismaService.movie.deleteMany();
 
+
     await request(app.getHttpServer()).post('/movies').send({
       title: 'Inception',
       genre: 'Sci-fi',
@@ -36,17 +37,15 @@ describe('Movies API (e2e)', () => {
     const response = await request(app.getHttpServer()).get('/movies/all');
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
+
+
+    const movies = []
   });
 
   it('/movies (POST) - should create a movie', async () => {
     const newMovie = { title: 'Avatar', genre: 'Sci-fi', duration: 162, rating: 8.0, releaseYear: 2009 };
     const response = await request(app.getHttpServer()).post('/movies').send(newMovie);
     expect(response.status).toBe(200);
-    // console.log('Response Body:', response.body);
-    // expect(response.body, newMovie);
-    // expect(response.body).toHaveProperty('message');
-    // expect(response.body.message).toContain('Error creating movie');
-    // expect(response.body).toHaveProperty('statusCode', 400);
   });
 
   it('/movies/:title (GET) - should get a movie by title', async () => {

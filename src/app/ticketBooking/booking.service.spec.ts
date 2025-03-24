@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { BookingService } from './booking.service';
 import { DatabaseService } from '../../database/database.service';
 import { BadRequestException, ConflictException } from '@nestjs/common';
@@ -8,33 +10,28 @@ describe('BookingService', () => {
     let service: BookingService;
     let database: DatabaseService;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
+        // process.env = { ...process.env, NODE_ENV: 'test' }; // Ensure test environment is loaded
+    
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                BookingService,
-                {
-                    provide: DatabaseService,
-                    useValue: {
-                        booking: {
-                            findUnique: jest.fn(),
-                            findFirst: jest.fn(),
-                            create: jest.fn(),
-                            delete: jest.fn(),
-                        },
-                        showtime: {
-                            findUnique: jest.fn(),
-                        },
-                        user: {
-                            findUnique: jest.fn(),
-                        },
-                    },
-                },
-            ],
+          imports: [ConfigModule.forRoot({ isGlobal: true })],
+          providers: [BookingService, DatabaseService, ConfigService],
         }).compile();
-
+    
         service = module.get<BookingService>(BookingService);
         database = module.get<DatabaseService>(DatabaseService);
-    });
+        await database.onModuleInit(); // Connect to DB before tests
+        await database.booking.deleteMany({});
+        await database.showtime.deleteMany({});
+        await database.movie.deleteMany({});
+        await database.user.deleteMany({});
+        // await database.$executeRaw`TRUNCATE TABLE "bookings" RESTART IDENTITY CASCADE;`;
+      });
+    
+      afterAll(async () => {
+        // await database.$executeRaw`TRUNCATE TABLE "bookings" RESTART IDENTITY CASCADE;`;
+        await database.onModuleDestroy(); // Disconnect after tests
+      });
 
     it('should be defined', () => {
         expect(service).toBeDefined();

@@ -15,23 +15,20 @@ export class UserService {
     async createUser(data: Prisma.UserCreateInput): Promise<User> {
         const { name, email, password } = data;
 
-        // Validate name
+        
         if (!name || name.trim().length === 0) {
             throw new BadRequestException('Name is required');
         }
 
-        // Validate email
         if (!email || !this.isValidEmail(email)) {
             throw new BadRequestException('Invalid email format');
         }
 
-        // Check if email already exists
         const existingUser = await this.database.user.findUnique({ where: { email } });
         if (existingUser) {
             throw new BadRequestException('Email already exists');
         }
 
-        // Validate password length
         if (!password || password.length < 6) {
             throw new BadRequestException('Password must be at least 6 characters long');
         }

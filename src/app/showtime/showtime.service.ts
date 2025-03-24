@@ -97,7 +97,7 @@ export class ShowTimeService {
         if (updateData.movieId) {
             const movieExists = await this.database.movie.findUnique({ where: { id: updateData.movieId }});
             if (!movieExists) {
-                throw new BadRequestException(`Update movie for showtime with ID ${updateData.movieId} not found`);
+                throw new BadRequestException(`Movie with ID ${updateData.movieId} not found. Unable to update.`);
             }
         }
 

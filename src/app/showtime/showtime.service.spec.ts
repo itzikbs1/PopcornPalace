@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ShowTimeService } from './showtime.service';
 import { DatabaseService } from '../../database/database.service';
 import { BadRequestException, ConflictException } from '@nestjs/common';
@@ -7,32 +8,28 @@ describe('ShowTimeService', () => {
     let service: ShowTimeService;
     let database: DatabaseService;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
+        // process.env = { ...process.env, NODE_ENV: 'test' };
+    
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                ShowTimeService,
-                {
-                    provide: DatabaseService,
-                    useValue: {
-                        showtime: {
-                            findUnique: jest.fn(),
-                            findMany: jest.fn(),
-                            findFirst: jest.fn(),
-                            create: jest.fn(),
-                            update: jest.fn(),
-                            delete: jest.fn(),
-                        },
-                        movie: {
-                            findUnique: jest.fn(),
-                        },
-                    },
-                },
-            ],
+          imports: [ConfigModule.forRoot({ isGlobal: true })],
+          providers: [ShowTimeService, DatabaseService, ConfigService],
         }).compile();
-
+    
         service = module.get<ShowTimeService>(ShowTimeService);
         database = module.get<DatabaseService>(DatabaseService);
-    });
+        await database.onModuleInit();
+        await database.booking.deleteMany({});
+        await database.showtime.deleteMany({});
+        await database.movie.deleteMany({});
+        await database.user.deleteMany({});
+        // await database.$executeRaw`TRUNCATE TABLE "showtimes" RESTART IDENTITY CASCADE;`;
+      });
+    
+      afterAll(async () => {
+        // await database.$executeRaw`TRUNCATE TABLE "showtimes" RESTART IDENTITY CASCADE;`;
+        await database.onModuleDestroy();
+      });
 
     it('should be defined', () => {
         expect(service).toBeDefined();
@@ -130,15 +127,42 @@ describe('ShowTimeService', () => {
 
     // updateShowTime (Success)
     it('should update a showtime successfully', async () => {
-        const existingShowtime = { id: 1, movieId: 1, theater: 'Cinema City', startTime: new Date(), endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), price: 50 };
-        const updatedData = { price: 70 };
-        const updatedShowtime = { ...existingShowtime, ...updatedData };
+        jest.spyOn(database.showtime, 'findUnique').mockResolvedValue({
+            id: 1,
+            movieId: 1,
+            theater: 'Cinema City',
+            price: 50.0,
+            startTime: new Date('2025-02-14T10:00:00Z'),
+            endTime: new Date('2025-02-14T12:00:00Z'),
+          });
+        const showtime = await service.getShowTimeById(1);
+        expect(showtime.price).toBe(50);
 
-        jest.spyOn(database.showtime, 'findUnique').mockResolvedValue(existingShowtime);
-        jest.spyOn(database.showtime, 'update').mockResolvedValue(updatedShowtime);
-
-        const result = await service.updateShowTime(1, updatedData);
-        expect(result.price).toBe(70);
+        jest.spyOn(database.showtime, 'findFirst').mockResolvedValue(null);
+        jest.spyOn(database.showtime, 'update').mockResolvedValue({
+            id: 1,
+            movieId: 1,
+            theater: 'Cinema City',
+            price: 55.0,
+            startTime: new Date('2025-02-14T11:00:00Z'),
+            endTime: new Date('2025-02-14T13:00:00Z'),
+          });
+      
+          const updatedShowtime = await service.updateShowTime(1, {
+            price: 55.0,
+            startTime: new Date('2025-02-14T11:00:00Z'),
+            endTime: new Date('2025-02-14T13:00:00Z'),
+          });
+      
+          expect(database.showtime.update).toHaveBeenCalledTimes(1);
+          expect(database.showtime.update).toHaveBeenCalledWith({
+            where: { id: 1 },
+            data: {
+              price: 55.0,
+              startTime: new Date('2025-02-14T11:00:00Z'),
+              endTime: new Date('2025-02-14T13:00:00Z'),
+            },
+          });
     });
 
     // updateShowTime (Not Found → BadRequest)
@@ -155,15 +179,22 @@ describe('ShowTimeService', () => {
         jest.spyOn(database.showtime, 'findUnique').mockResolvedValue(existingShowtime);
         jest.spyOn(database.showtime, 'delete').mockResolvedValue(existingShowtime);
 
-        const result = await service.deleteShowTime(1);
-        expect(result).toEqual(existingShowtime);
+        await expect(service.deleteShowTime(1)).resolves.toBeUndefined();
+
+        expect(database.showtime.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+        expect(database.showtime.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 
     // deleteShowTime (Not Found → BadRequest)
     it('should throw BadRequestException if showtime to delete is not found', async () => {
         jest.spyOn(database.showtime, 'findUnique').mockResolvedValue(null);
 
-        await expect(service.deleteShowTime(99)).rejects.toThrow(BadRequestException);
+        await expect(service.deleteShowTime(999)).rejects.toThrow(BadRequestException);
+        await expect(service.deleteShowTime(999)).rejects.toThrow('Showtime with ID 999 not found');
+    
+        // expect(database.showtime.delete).not.toHaveBeenCalled();  
+        jest.spyOn(database.showtime, 'delete').mockResolvedValue(null);
+      
     });
 
     //Try to add showtime with the same time for startTime and endTime -> BadRequestException

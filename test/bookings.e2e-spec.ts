@@ -23,6 +23,12 @@ describe('Bookings API (e2e)', () => {
     await prismaService.showtime.deleteMany();
     await prismaService.movie.deleteMany();
     await prismaService.user.deleteMany();
+    // await prismaService.$transaction([
+    //   prismaService.booking.deleteMany(),
+    //   prismaService.showtime.deleteMany(),
+    //   prismaService.movie.deleteMany(),
+    //   prismaService.user.deleteMany()
+    // ]);
 
     const movie = await prismaService.movie.create({
       data: {
@@ -34,7 +40,7 @@ describe('Bookings API (e2e)', () => {
       },
     });
   createdMovieId = movie.id;
-  console.log('Created movie with ID:', createdMovieId, 'Type:', typeof createdMovieId);
+  // console.log('Created movie with ID:', createdMovieId, 'Type:', typeof createdMovieId);
   const showtime = await prismaService.showtime.create({
     data: {
         movieId: createdMovieId,
@@ -44,9 +50,9 @@ describe('Bookings API (e2e)', () => {
         price: 20.2
     }    
   });
-  console.log('showtime ', showtime);
+  // console.log('showtime ', showtime);
   createdShowtimeId = showtime.id;
-  console.log('createdShowtimeID ', createdShowtimeId);
+  // console.log('createdShowtimeID ', createdShowtimeId);
 
   const user = await prismaService.user.create({
     data: {
@@ -65,8 +71,8 @@ describe('Bookings API (e2e)', () => {
   });
 
   it('/bookings (POST) - should create a booking', async () => {
-    console.log('userId ', createdUserId);
-    console.log('userid typeof ', typeof createdUserId);
+    // console.log('userId ', createdUserId);
+    // console.log('userid typeof ', typeof createdUserId);
     
     
     const newBooking = {

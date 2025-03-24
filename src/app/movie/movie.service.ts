@@ -1,10 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { validateSync } from 'class-validator';
 
-import { Prisma } from '@prisma/client';
-
 import { DatabaseService } from '../../database/database.service';
 import { CreateMovieDto } from './movie';
+import { UpdateMovieDto } from './update-movie.dto';
 
 @Injectable()
 export class MovieService {
@@ -22,6 +21,18 @@ export class MovieService {
         if (errors.length > 0) {
             throw new BadRequestException(errors.map(err => Object.values(err.constraints)).join(', '));
         }
+        // if (!movie.title) {
+        //     throw BadRequestException('Title is Requied')
+        // }
+        const existingMovie = await this.database.movie.findUnique({
+            where: { title: movie.title },
+        });
+    
+        if (existingMovie) {
+            throw new BadRequestException(`A movie with the title "${movie.title}" already exists. Please choose a different title.`);
+        }
+        // return await this.database.movie.create({ data: movie });
+        
         try {
             return await this.database.movie.create({ data: movie });
         } catch (error) {
@@ -54,7 +65,7 @@ export class MovieService {
         return movie;
     }
 
-    async updateMovie(title: string, movieUpdate: Prisma.MovieUpdateInput) {
+    async updateMovie(title: string, movieUpdate: UpdateMovieDto) {
         if (!title.trim()) {
             throw new BadRequestException('Title cannot be empty');
         }

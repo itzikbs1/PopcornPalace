@@ -6,11 +6,11 @@ export class UpdateShowtimeDto {
     movieId?: number;
 
     @IsOptional()
-    @IsDate({ message: 'Start time must be a valid date' })
+    @IsString({ message: 'Start time must be a valid string' })
     startTime?: Date;
 
     @IsOptional()
-    @IsDate({ message: 'End time must be a valid date' })
+    @IsString({ message: 'End time must be a valid string' })
     endTime?: Date;
 
     @IsOptional()

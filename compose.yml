@@ -1,16 +1,62 @@
+version: '3.8'
+
 services:
   db:
-    image: postgres
+    image: postgres:15
+    container_name: popcorn_db
     restart: always
     environment:
-      POSTGRES_USER: popcorn-palace
-      POSTGRES_PASSWORD: popcorn-palace
-      POSTGRES_DB: popcorn-palace
-  #  volumes:
-   #   - type: bind
-   #     source: ./data
-   #     target: /var/lib/postgresql/data --> in case u need to save data to local storage
+      POSTGRES_USER: popcorn_palace
+      POSTGRES_PASSWORD: popcorn_palace
+      POSTGRES_DB: popcorn_palace
     ports:
-      - target: 5432
-        published: 5432
-        protocol: tcp
+      - '5432:5432'
+    networks:
+      - popcorn_network
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+networks:
+  popcorn_network:
+
+volumes:
+  db_data:
+# version: '3.8'
+
+# services:
+#   db:
+#     image: postgres:15
+#     container_name: popcorn_db
+#     restart: always
+#     environment:
+#       POSTGRES_USER: popcorn_palace
+#       POSTGRES_PASSWORD: popcorn_palace
+#       POSTGRES_DB: popcorn_palace
+#     ports:
+#       - '5432:5432'
+#     networks:
+#       - popcorn_network
+#     volumes:
+#       - db_data:/var/lib/postgresql/data
+
+#   test_db:
+#     image: postgres:15
+#     container_name: popcorn_test_db
+#     restart: always
+#     environment:
+#       POSTGRES_USER: popcorn_palace
+#       POSTGRES_PASSWORD: popcorn_palace
+#       POSTGRES_DB: popcorn_palace_test
+#     ports:
+#       - '5433:5432'
+#     networks:
+#       - popcorn_network
+#     volumes:
+#       - test_db_data:/var/lib/postgresql/data
+
+# networks:
+#   popcorn_network:
+
+# volumes:
+#   db_data:
+#   test_db_data:

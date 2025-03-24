@@ -6,11 +6,13 @@ export class CreateShowtimeDto {
     movieId: number;
 
     @IsDefined({ message: 'Start time is required' })
-    @IsDate({ message: 'Start time must be a valid date' })
+    // @IsDate({ message: 'Start time must be a valid date' })
+    // @IsNotEmpty()
+    @IsString({ message: 'Start time must be a valid string' })
     startTime: Date;
 
     @IsDefined({ message: 'End time is required' })
-    @IsDate({ message: 'End time must be a valid date' })
+    @IsString({ message: 'End time must be a valid string' })
     endTime: Date;
 
     @IsDefined({ message: 'Price is required' })

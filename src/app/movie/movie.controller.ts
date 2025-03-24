@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, HttpCode, UsePipes } from '@nestjs/common';
 
-import { Prisma } from '@prisma/client';
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './movie'; //from './create-movie.dto';
+import { UpdateMovieDto } from './update-movie.dto';
 
 @Controller('movies')
 export class MovieController {
@@ -29,7 +29,7 @@ export class MovieController {
 
     @Post('/update/:title')
     @HttpCode(200)
-    async update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: Prisma.MovieUpdateInput) {
+    async update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: UpdateMovieDto) {
         await this.movieService.updateMovie(title, movieUpdate);
     }
 
