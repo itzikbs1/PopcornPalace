@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, ParseIntPipe, HttpCode } from '@nestjs/common';
 
 import { ShowTimeService } from "./showtime.service";
-import { Prisma } from '@prisma/client';
+import { CreateShowtimeDto } from './create-showtime.dto';
+import { UpdateShowtimeDto } from './update-showtime.dto';
 
 @Controller('showtimes')
 export class ShowTimeController {
@@ -13,26 +14,27 @@ export class ShowTimeController {
         return this.showTimeService.getAllShowTimes();
     }
     @Get(':id')
+    @HttpCode(200)
     async getShowTimeById(@Param('id', ParseIntPipe) id: number) {
         return this.showTimeService.getShowTimeById(id);
     }
 
     @Post()
     @HttpCode(200)
-    async create(@Body(ValidationPipe) showTime: Omit<Prisma.ShowtimeCreateInput, 'movie'> & { movieId: number }) {
-        return this.showTimeService.addShowTime(showTime);
+    async create(@Body(ValidationPipe) createShowtimeDto: CreateShowtimeDto) {
+        return this.showTimeService.addShowTime(createShowtimeDto);
     }
 
     @Post('/update/:id')
     @HttpCode(200)
     async update(@Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) showTimeUpdate: Omit<Prisma.ShowtimeUpdateInput, 'movie'> & { movieId: number }) {
-        return this.showTimeService.updateShowTime(id, showTimeUpdate);
+    @Body(ValidationPipe) updateShowtimeDto: UpdateShowtimeDto) {
+        await this.showTimeService.updateShowTime(id, updateShowtimeDto);
     }
 
     @Delete(':id')
+    @HttpCode(200)
     async delete(@Param('id', ParseIntPipe) id: number) {
-        return this.showTimeService.deleteShowTime(id);
-        // return { message: 'Showtime deleted successfully' };
+        await this.showTimeService.deleteShowTime(id);
     }
 }

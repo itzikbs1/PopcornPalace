@@ -10,7 +10,6 @@ import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [MovieModule, ShowTimeModule, BookingModule, UserModule, DatabaseModule],
-  // imports: [MovieModule, ShowTimeModule, BookingModule, UserModule, DatabaseModule],
   controllers: [AppController],
   providers: [AppService],
 })

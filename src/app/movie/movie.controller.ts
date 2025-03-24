@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, HttpCode, UsePipes } from '@nestjs/common';
 
-import { MovieService } from './movie.service';
 import { Prisma } from '@prisma/client';
+import { MovieService } from './movie.service';
+import { CreateMovieDto } from './movie'; //from './create-movie.dto';
 
 @Controller('movies')
 export class MovieController {
@@ -15,9 +16,9 @@ export class MovieController {
 
     @Post()
     @HttpCode(200)
-    // create(@Body(ValidationPipe) movie: Omit<Movie, 'id'>): Movie {
-    async create(@Body(ValidationPipe) movie: Prisma.MovieCreateInput) {
-        return this.movieService.addMovie(movie);
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+    createMovie(@Body() createMovieDto: CreateMovieDto) {
+        return this.movieService.addMovie(createMovieDto);
     }
 
 
@@ -29,11 +30,11 @@ export class MovieController {
     @Post('/update/:title')
     @HttpCode(200)
     async update(@Param('title') title: string, @Body(ValidationPipe) movieUpdate: Prisma.MovieUpdateInput) {
-        return this.movieService.updateMovie(title, movieUpdate);
+        await this.movieService.updateMovie(title, movieUpdate);
     }
 
     @Delete(':title')
     async deleteMovie(@Param('title') title: string) {
-        return this.movieService.deleteMovie(title);
+        await this.movieService.deleteMovie(title);
     }
 }

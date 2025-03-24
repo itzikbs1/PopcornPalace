@@ -1,8 +1,10 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { validateSync } from 'class-validator';
 
 import { Prisma } from '@prisma/client';
-import { DatabaseService } from 'src/database/database.service';
 
+import { DatabaseService } from '../../database/database.service';
+import { CreateMovieDto } from './movie';
 
 @Injectable()
 export class MovieService {
@@ -11,17 +13,14 @@ export class MovieService {
 
     async getAllMovies() {
         const movies = await this.database.movie.findMany();
-
-        if (movies.length === 0) {
-            throw new NotFoundException('There are no movies available');
-        }
-
         return movies;
     }
 
-    async addMovie(movie: Prisma.MovieCreateInput) {
-        if (!movie.title || movie.title.trim() === '') {
-            throw new BadRequestException('Title is required');
+    async addMovie(movie: CreateMovieDto) {
+        const errors = validateSync(Object.assign(new CreateMovieDto(), movie));
+
+        if (errors.length > 0) {
+            throw new BadRequestException(errors.map(err => Object.values(err.constraints)).join(', '));
         }
         try {
             return await this.database.movie.create({ data: movie });
@@ -29,6 +28,7 @@ export class MovieService {
             throw new BadRequestException('Error creating movie: ' + error.message);
         }
     }
+    
 
     async getMovieByTitle(title: string) {
         if (!title.trim()) {
@@ -61,17 +61,13 @@ export class MovieService {
 
         const existingMovie = await this.database.movie.findUnique({ where: { title } });
         if (!existingMovie) {
-            throw new NotFoundException(`Movie with title "${title}" not found`);
+            throw new BadRequestException(`Movie with title "${title}" not found`);
         }
 
-        try {
-            return await this.database.movie.update({
-                where: { title },
-                data: movieUpdate,
-            });
-        } catch (error) {
-            throw new BadRequestException('Error updating movie: ' + error.message);
-        }
+        await this.database.movie.update({
+            where: { title },
+            data: movieUpdate,
+        });
     }
 
     async deleteMovie(title: string) {
@@ -81,11 +77,11 @@ export class MovieService {
 
         const existingMovie = await this.database.movie.findUnique({ where: { title } });
         if (!existingMovie) {
-            throw new NotFoundException(`Movie with title "${title}" not found`);
+            throw new BadRequestException(`Movie with title "${title}" not found`);
         }
 
         try {
-            return await this.database.movie.delete({ where: { title } });
+            await this.database.movie.delete({ where: { title } });
         } catch (error) {
             throw new BadRequestException('Error deleting movie: ' + error.message);
         }

@@ -2,6 +2,7 @@ import { Controller, Post, Body, Patch, Param, Get, HttpCode } from '@nestjs/com
 import { BookingService } from './booking.service';
 import { ShowTimeService } from '../showtime/showtime.service';
 import { CreateBookingDto } from './create-booking';
+import { Booking } from '@prisma/client';
 
 @Controller('bookings')
 export class BookingController {
@@ -28,8 +29,8 @@ export class BookingController {
     //     return this.bookingService.cancelBooking(bookingId);
     // }
 
-    // @Get(':bookingId')
-    // getBooking(@Param('bookingId') bookingId: string): Booking {
-    //     return this.bookingService.findBookingById(bookingId);
-    // }
+    @Get(':bookingId')
+    getBooking(@Param('bookingId') bookingId: string): Promise<Booking> {
+        return this.bookingService.getBookingById(bookingId);
+    }
 }
